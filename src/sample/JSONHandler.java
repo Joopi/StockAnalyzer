@@ -2,22 +2,23 @@ package sample;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+
 
 public class JSONHandler {
 
     private JSONObject data;
 
+
     public JSONHandler(){}
 
-    public boolean fetchURL(String url)
+    public boolean fetchURL(String url, String key)
     {
+
         try {
             URI uri = new URI(url);
             try {
@@ -25,7 +26,7 @@ public class JSONHandler {
                 JSONObject root = new JSONObject(tokener);
                 if (root.length() > 1) {
                     //TODO change JSON key depending on combobox.
-                    data = root.getJSONObject("Monthly Adjusted Time Series");
+                    data = root.getJSONObject(key);
                     return true;
                 }
             } catch (IOException e) {
@@ -54,4 +55,8 @@ public class JSONHandler {
 
         return result;
     }
+
+
+
+
 }
