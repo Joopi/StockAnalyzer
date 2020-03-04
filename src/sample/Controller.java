@@ -1,21 +1,19 @@
 package sample;
 
-
-
-
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
 
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -35,69 +33,117 @@ public class Controller {
     @FXML
     private NumberAxis yAxis;
     @FXML
-    private ComboBox<String> Time_Series;
+    private ComboBox<String> timeSeries;
     @FXML
-    private ComboBox<String> Data_Series;
+    private ComboBox<String> dataSeries;
     @FXML
-    private ComboBox<String> Output_Size;
+    private ComboBox<String> outputSize;
     @FXML
-    private ComboBox<String> Time_Interval;
+    private ComboBox<String> timeInterval;
+    @FXML
+    private CheckBox quickDraw; //improves speed significantly by downsampling, will lose some data.
 
-    Map<String, String> timeSeriesMap  = new HashMap<String, String>() {{
-        put("TIME_SERES_INTRADAY", "Time Series ");
+    private boolean firstQuery = false;
+
+    private Map<String, String> timeSeriesMap = new HashMap<String, String>() {{
         put("TIME_SERIES_DAILY", "Time Series (Daily)");
         put("TIME_SERIES_DAILY_ADJUSTED", "Time Series (Daily)");
         put("TIME_SERIES_WEEKLY", "Weekly Time Series");
-        put("TIME_SERIES_WEEKLY_ADJUSTED", "Adjusted Weekly Time Series");
+        put("TIME_SERIES_WEEKLY_ADJUSTED", "Weekly Adjusted Time Series");
         put("TIME_SERIES_MONTHLY", "Monthly Time Series");
-        put("TIME_SERIES_MONTHLY_ADJUSTED", "Adjusted Monthly Time Series");
+        put("TIME_SERIES_MONTHLY_ADJUSTED", "Monthly Adjusted Time Series");
     }};
+
     private int metric;
+
+    @FXML
+    private ObservableList<String> dataSeriesListDefault =
+            FXCollections.observableArrayList("1.open","2.high","3.low","4.close","5.volume");
+    @FXML
+    private ObservableList<String> dataSeriesListDailyAdjusted =
+            FXCollections.observableArrayList("1.open","2.high","3.low","4.close","5.adjusted close", "6.volume", "7.dividend amount", "8.split coefficient");
+    @FXML
+    private ObservableList<String> dataSeriesListWMAdjusted =
+            FXCollections.observableArrayList("1.open","2.high","3.low","4.close","5.adjusted close", "6.volume", "7.dividend amount");
 
 
     @FXML
-    protected void handleQuery(ActionEvent event) {
+    protected void handleQuery(ActionEvent event) {//On button press
+        if (query(event))
+            firstQuery = true;
+    }
+
+    public void update(ActionEvent event) {//on dataSeries change
+        if(firstQuery && dataSeries.getValue() != null) query(event);
+        //when switching from /ADJUSTED/ timeSeries to some other that doesn't
+        //necessarily have the same data metrics the value in dataSeries will reset to null and have to be manually input again
+    }
+
+    public boolean query(ActionEvent event) {
         if (!API_KEY.isEmpty()) {
-            JSONHandler jsonHandler = new JSONHandler();
+            if ((timeSeries.getValue() != null) && (dataSeries.getValue() != null) && ((timeInterval.getValue() != null) || (timeInterval.isDisabled()))) {
 
-            //TODO fill URL parameters with comboboxes
-            if (jsonHandler.fetchURL("https://www.alphavantage.co/query?function=" +
-                    Time_Series.getValue() +"&symbol=" +
-                    "MSFT&interval=" +
-                    Time_Interval.getValue()+"&outputsize=" +
-                    Output_Size.getValue() + "&apikey=" +
-                    API_KEY,
-                    timeSeriesMap.get(Time_Series.getValue()))) {
-                area.clear();
-                chart.getData().clear();
+                JSONHandler jsonHandler = new JSONHandler();
+                String key = timeSeries.getValue().matches("TIME_SERIES_INTRADAY") ? "Time Series (" + timeInterval.getValue() + ")" : timeSeriesMap.get(timeSeries.getValue());
 
-                //metric change depending on combobox
-                metric = Data_Series.getItems().indexOf(Data_Series.getValue());
+                if (jsonHandler.fetchURL("https://www.alphavantage.co/query?function=" +
+                                timeSeries.getValue() + "&symbol=" +
+                                "MSFT&interval=" +
+                                timeInterval.getValue() + "&outputsize=" +
+                                outputSize.getValue() + "&apikey=" +
+                                API_KEY,
+                        key))
+                {
+                    area.clear();
+                    chart.getData().clear();
 
-                List<StockEntry> history = jsonHandler.getHistory();
-                XYChart.Series series = new XYChart.Series<>();
+                    metric = dataSeries.getItems().indexOf(dataSeries.getValue());
+                    List<StockEntry> history = quickDraw.isSelected() ? jsonHandler.getHistory(xAxis.getWidth()) : jsonHandler.getHistory();
 
-                for (int i = history.size()-1; i > 0; i--) {
-                    StockEntry entry = history.get(i);
-                    double value = entry.getSeries().get(metric).getValue();
-                    area.appendText(entry.getDate() + " " + value + '\n');
-                    series.getData().add(new XYChart.Data<>(entry.getDate(), value));
+                    StringBuilder stringBuilder = new StringBuilder();
+                    XYChart.Series series = new XYChart.Series<>();
+                    Collection<XYChart.Data<String, Double>> samples = new ArrayList<>(history.size());
+                    //significant speed improvement by using StringBuilder and a Collection.
+
+                    for (int i = history.size() - 1; i > 0; i--) {
+                        StockEntry entry = history.get(i);
+                        double value = entry.getSeries().get(metric).getValue();
+                        stringBuilder.append(entry.getDate() + " " + value + '\n');
+                        samples.add(new XYChart.Data<>(entry.getDate(), value));
+                    }
+                    area.appendText(stringBuilder.toString());
+                    series.getData().setAll(samples);
+
+                    //JavaFX chart is a huge bottleneck for speed, could consider switching over to https://github.com/GSI-CS-CO/chart-fx.
+                    //other solution could be to instead draw on a canvas.
+                    chart.getData().add(series);
+                    return true;
                 }
-                chart.setCreateSymbols(false);
-                chart.getData().add(series);
+            } else {
+                System.out.println("Please ensure that you have a selected a valid metric");
             }
         } else {
             System.out.println("Please set an API_KEY from alphavantage.co");
         }
+        return false;
     }
 
-    public String getRoots()
+    public void setDataSeriesList(ActionEvent actionEvent)
     {
-        int index = Time_Series.getItems().indexOf(Time_Series.getValue());
-        String[] jsonRoots = {"Time Series (15min)", "Time Series (Daily)",
-                        "Time Series (Daily)", "Weekly Time Series", "Weekly Adjusted Time Series",
-                        "Monthly Time Series", "Monthly Adjusted Time Series"};
-        return jsonRoots[2];
+        String choice = timeSeries.getValue();
+        if (choice.matches("TIME_SERIES_INTRADAY")){
+            dataSeries.setItems(dataSeriesListDefault);
+            timeInterval.setDisable(false);
+        } else {
+            if (choice.matches("TIME_SERIES_DAILY_ADJUSTED"))
+                dataSeries.setItems(dataSeriesListDailyAdjusted);
+             else if (choice.matches("TIME_SERIES_WEEKLY_ADJUSTED") || choice.matches("TIME_SERIES_MONTHLY_ADJUSTED"))
+                dataSeries.setItems(dataSeriesListWMAdjusted);
+            else
+                dataSeries.setItems(dataSeriesListDefault);
+
+            timeInterval.setDisable(true); //Time interval is irrelevant here, so we can disable it.
+        }
     }
 
 

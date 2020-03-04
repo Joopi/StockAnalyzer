@@ -1,39 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 <?import java.lang.String?>
 <?import javafx.collections.FXCollections?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
-
-
-<SplitPane dividerPositions="0.30089485458612975" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="572.0" prefWidth="896.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+<SplitPane dividerPositions="0.30089485458612975" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="572.0" prefWidth="896.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
     <items>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="570.0" prefWidth="250.0">
             <children>
-                <ComboBox fx:id="Data_Series" layoutX="30.0" layoutY="30.0" prefWidth="150.0" promptText="Data Series">
+                <ComboBox fx:id="dataSeries" layoutX="30.0" layoutY="30.0" onAction="#update" prefWidth="150.0" promptText="Data Series">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="1.open"/>
-                            <String fx:value="2.high"/>
-                            <String fx:value="3.low"/>
-                            <String fx:value="4.close"/>
-                            <String fx:value="5.volume"/>
+                            <String fx:value="1.open" />
+                            <String fx:value="2.high" />
+                            <String fx:value="3.low" />
+                            <String fx:value="4.close" />
+                            <String fx:value="5.volume" />
                         </FXCollections>
                     </items>
                 </ComboBox>
-                <ComboBox fx:id="Time_Series" layoutX="30.0" layoutY="80.0" prefWidth="150.0" promptText="Time series">
+                <ComboBox fx:id="timeSeries" layoutX="30.0" layoutY="80.0" onAction="#setDataSeriesList" prefWidth="150.0" promptText="Time series">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="TIME_SERIES_INTRADAY"/>
-                            <String fx:value="TIME_SERIES_DAILY"/>
-                            <String fx:value="TIME_SERIES_DAILY_ADJUSTED"/>
-                            <String fx:value="TIME_SERIES_WEEKLY"/>
-                            <String fx:value="TIME_SERIES_WEEKLY_ADJUSTED"/>
-                            <String fx:value="TIME_SERIES_MONTHLY"/>
-                            <String fx:value="TIME_SERIES_MONTHLY_ADJUSTED"/>
+                            <String fx:value="TIME_SERIES_INTRADAY" />
+                            <String fx:value="TIME_SERIES_DAILY" />
+                            <String fx:value="TIME_SERIES_DAILY_ADJUSTED" />
+                            <String fx:value="TIME_SERIES_WEEKLY" />
+                            <String fx:value="TIME_SERIES_WEEKLY_ADJUSTED" />
+                            <String fx:value="TIME_SERIES_MONTHLY" />
+                            <String fx:value="TIME_SERIES_MONTHLY_ADJUSTED" />
                         </FXCollections>
                     </items>
                 </ComboBox>
@@ -44,22 +48,22 @@
                         </FXCollections>
                     </items>
                 </ComboBox>
-                <ComboBox fx:id="Output_Size" layoutX="30.0" layoutY="230.0" prefWidth="150.0" promptText="Output Size">
+                <ComboBox fx:id="outputSize" layoutX="30.0" layoutY="230.0" prefWidth="150.0" promptText="Output Size">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="full"/>
-                            <String fx:value="compact"/>
+                            <String fx:value="full" />
+                            <String fx:value="compact" />
                         </FXCollections>
                     </items>
                 </ComboBox>
-                <ComboBox fx:id="Time_Interval" layoutX="30.0" layoutY="180.0" prefWidth="150.0" promptText="Time Interval">
+                <ComboBox fx:id="timeInterval" layoutX="30.0" layoutY="180.0" prefWidth="150.0" promptText="Time Interval">
                     <items>
                         <FXCollections fx:factory="observableArrayList">
-                            <String fx:value="1min"/>
-                            <String fx:value="5min"/>
-                            <String fx:value="15min"/>
-                            <String fx:value="30min"/>
-                            <String fx:value="60min"/>
+                            <String fx:value="1min" />
+                            <String fx:value="5min" />
+                            <String fx:value="15min" />
+                            <String fx:value="30min" />
+                            <String fx:value="60min" />
                         </FXCollections>
                     </items>
                 </ComboBox>
@@ -68,7 +72,7 @@
             </children></AnchorPane>
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="514.0" prefWidth="572.0">
             <children>
-                <LineChart fx:id="chart" layoutX="14.0" layoutY="25.0" prefHeight="503.0" prefWidth="578.0">
+                <LineChart fx:id="chart" animated="false" createSymbols="false" layoutX="14.0" layoutY="25.0" prefHeight="503.0" prefWidth="578.0">
                     <xAxis>
                         <CategoryAxis animated="false" endMargin="6.0" prefHeight="99.0" prefWidth="521.0" side="BOTTOM" startMargin="6.0" tickLabelGap="7.0" fx:id="xAxis">
                             <tickLabelFont>
@@ -79,6 +83,7 @@
                         <NumberAxis fx:id="yAxis" side="LEFT" />
                     </yAxis>
                 </LineChart>
+            <CheckBox fx:id="quickDraw" layoutX="37.0" layoutY="520.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="81.0" selected="true" text="Quick draw" />
             </children></AnchorPane>
     </items>
 </SplitPane>

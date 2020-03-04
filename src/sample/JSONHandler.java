@@ -3,8 +3,7 @@ package sample;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,23 +15,22 @@ public class JSONHandler {
 
     public JSONHandler(){}
 
-    public boolean fetchURL(String url, String key)
+    public boolean fetchURL(String address, String key)
     {
 
         try {
-            URI uri = new URI(url);
+            URL url = new URL(address);
             try {
-                JSONTokener tokener = new JSONTokener(uri.toURL().openStream());
+                JSONTokener tokener = new JSONTokener(url.openStream());
                 JSONObject root = new JSONObject(tokener);
                 if (root.length() > 1) {
-                    //TODO change JSON key depending on combobox.
                     data = root.getJSONObject(key);
                     return true;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } catch (URISyntaxException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
         }
         return false;
@@ -52,6 +50,37 @@ public class JSONHandler {
             //probably should not cut corners by using lambda expressions and returning last item each iteration..
             object.keys().forEachRemaining(s -> result.get(result.size()-1).addSeries(new StockSeries(s, object.getDouble(s))));
         });
+
+        return result;
+    }
+
+    /**
+        alternative to getHistory, used for speed improvement with larger datasets.
+        downsamples data entries to the canvas width.
+        since x axis represents time/date, there shouldn't be more than one entry per column.
+     **/
+    public List<StockEntry> getHistory(double canvasWidth){
+        int len = data.length();
+        if (len <= canvasWidth)
+            return getHistory();
+
+        if (data == null || len == 0)
+            return null;
+
+        List<StockEntry> result = new ArrayList<>();
+
+        double skip = len/canvasWidth;
+        //skip = Math.Max(skip,1); is no longer required since we already ensure there are more data entries than the width of the canvas.
+
+        Object[] keys = data.keySet().toArray();
+        double l = (double) keys.length;
+        for (double i = 0; i < l; i += skip) {
+            String key = (String)keys[(int) i];
+            JSONObject object = data.getJSONObject(key);
+            result.add(new StockEntry(key));
+
+            object.keys().forEachRemaining(s -> result.get(result.size()-1).addSeries(new StockSeries(s, object.getDouble(s))));
+        }
 
         return result;
     }
